@@ -44,3 +44,33 @@ export async function GET() {
 
   return Response.json(chats);
 }
+
+// Adicione este novo método para lidar com DELETE
+export async function DELETE(req) {
+  const session = await getServerSession(authOptions);
+  if (!session) return new Response("Unauthorized", { status: 401 });
+
+  try {
+    const { searchParams } = new URL(req.url);
+    const chatId = searchParams.get('id') || searchParams.get('chatId');
+
+    if (!chatId) {
+      return new Response("ID do chat não fornecido", { status: 400 });
+    }
+
+    // Primeiro deleta todas as mensagens associadas ao chat
+    await prisma.message.deleteMany({
+      where: { chatId: chatId },
+    });
+
+    // Depois deleta o chat
+    const deletedChat = await prisma.chat.delete({
+      where: { id: chatId },
+    });
+
+    return Response.json(deletedChat);
+  } catch (err) {
+    console.error("Erro ao deletar chat:", err);
+    return new Response("Erro interno", { status: 500 });
+  }
+}

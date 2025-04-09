@@ -9,85 +9,86 @@ export default function ChatPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [assistantResponse, setAssistantResponse] = useState('');
 
+  // Busca mensagens do chat ao carregar a página
   useEffect(() => {
     async function fetchMessages() {
       try {
         const res = await fetch(`/api/chats/${chatId}`);
-    
-        if (!res.ok) {
-          console.error("Erro ao buscar mensagens:", res.statusText);
-          setMessages([]); // ou mantenha o anterior, depende do seu UX
-          return;
-        }
-    
+        if (!res.ok) throw new Error('Erro ao buscar mensagens');
+        
         const data = await res.json();
-    
-        // Garantir que o dado é um array
-        if (!Array.isArray(data)) {
-          console.error("Formato inesperado de mensagens:", data);
-          setMessages([]);
-          return;
-        }
-    
-        setMessages(data);
+        setMessages(Array.isArray(data) ? data : []);
       } catch (err) {
-        console.error("Erro na requisição:", err);
-        setMessages([]);
+        console.error(err);
+        setError('Falha ao carregar mensagens.');
       }
     }
-    
-
     fetchMessages();
   }, [chatId]);
 
+  // Envia mensagem e inicia streaming da resposta
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || loading) return;
 
     setError(null);
     setLoading(true);
-
-    // 1. Cria a mensagem do usuário
-    const userMessage = {
-      role: 'user',
-      content: input,
-    };
+    const userMessage = { role: 'user', content: input };
 
     try {
-      // 2. Salva no banco
+      // 1. Salva a mensagem do usuário no banco de dados
       await fetch(`/api/chats/${chatId}`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userMessage),
       });
 
-      // 3. Atualiza localmente
-      const updatedMessages = [...messages, { ...userMessage, index: messages.length }];
+      // 2. Atualiza a UI localmente
+      const updatedMessages = [...messages, userMessage];
       setMessages(updatedMessages);
       setInput('');
+      setAssistantResponse(''); // Reseta o buffer de streaming
 
-      // 4. Chama o ChatGPT
+      // 3. Chama a API de streaming
       const res = await fetch('/api/generate', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: updatedMessages }),
       });
 
-      const data = await res.json();
+      if (!res.ok) throw new Error('Erro no streaming');
 
-      const assistantMessage = {
-        role: 'assistant',
-        content: data.response,
-      };
+      // 4. Processa o stream em tempo real
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullResponse = '';
 
-      // 5. Salva a resposta no banco
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        fullResponse += chunk;
+        setAssistantResponse(fullResponse); // Atualiza a UI a cada chunk
+      }
+
+      // 5. Salva a resposta final no banco de dados
       await fetch(`/api/chats/${chatId}`, {
         method: 'POST',
-        body: JSON.stringify(assistantMessage),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          role: 'assistant',
+          content: fullResponse,
+        }),
       });
 
-      // 6. Atualiza localmente
-      setMessages((prev) => [...prev, { ...assistantMessage, index: prev.length }]);
+      // 6. Atualiza a lista de mensagens
+      setMessages(prev => [...prev, { role: 'assistant', content: fullResponse }]);
+      setAssistantResponse('');
+
     } catch (err) {
-      console.error('Erro ao enviar mensagem:', err);
+      console.error(err);
       setError('Erro ao enviar mensagem.');
     } finally {
       setLoading(false);
@@ -95,44 +96,52 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="p-4">
-      <div className="mb-4">
-        {messages.map((msg, i) => (
+    <div className="p-4 max-w-3xl mx-auto">
+      {/* Lista de mensagens */}
+      <div className="space-y-3 mb-4">
+        {messages.map((msg, index) => (
           <div
-            key={i}
-            className={`mb-2 p-2 rounded ${
-              msg.role === 'user' ? 'bg-blue-100 text-right' : 'bg-gray-200 text-left'
-            }`}
+            key={index}
+            className={`p-3 rounded-lg ${msg.role === 'user' ? 'bg-blue-100 ml-auto' : 'bg-gray-100'}`}
           >
             {msg.content}
           </div>
         ))}
 
-        {loading && (
-          <div className="text-gray-500 italic text-sm mt-2">Pensando...</div>
-        )}
-
-        {error && (
-          <div className="text-red-500 mt-2 text-sm">{error}</div>
+        {/* Resposta do assistente em streaming */}
+        {assistantResponse && (
+          <div className="p-3 rounded-lg bg-gray-100">
+            {assistantResponse}
+          </div>
         )}
       </div>
 
+      {/* Input de mensagem */}
       <div className="flex gap-2">
         <input
-          className="flex-1 p-2 border rounded"
-          placeholder="Digite sua mensagem..."
+          type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          placeholder="Digite sua mensagem..."
+          className="flex-1 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
           disabled={loading}
+          onKeyDown={(e) => e.key === 'Enter' && handleSend()}
         />
         <button
-          className="px-4 py-2 bg-blue-500 text-white rounded"
           onClick={handleSend}
           disabled={loading}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
         >
-          Enviar
+          {loading ? 'Enviando...' : 'Enviar'}
         </button>
       </div>
+
+      {/* Exibição de erros */}
+      {error && (
+        <div className="mt-2 p-2 text-red-600 bg-red-50 rounded">
+          {error}
+        </div>
+      )}
     </div>
   );
 }

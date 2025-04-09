@@ -46,15 +46,15 @@ export default function ChatsPage() {
 
   const handleConfirmDelete = async () => {
     if (!chatToDelete) return;
-
-    const res = await fetch(`/api/chats/${chatToDelete}`, {
+  
+    const res = await fetch(`/api/chats?id=${chatToDelete}`, {
       method: "DELETE",
     });
-
+  
     if (res.ok) {
       setChats(chats.filter((chat) => chat.id !== chatToDelete));
     }
-
+  
     setChatToDelete(null);
   };
 
