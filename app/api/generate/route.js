@@ -13,7 +13,7 @@ export async function POST(req) {
     }
 
     const stream = await openai.chat.completions.create({
-      model: 'gpt-4', // Corrigi o nome do modelo (não existe "gpt-4o-mini")
+      model: 'gpt-4',
       messages: messages.map((m) => ({
         role: m.role,
         content: m.content,

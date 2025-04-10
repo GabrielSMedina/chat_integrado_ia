@@ -21,9 +21,8 @@ export async function GET(req, { params }) {
       return new Response("Chat não encontrado", { status: 404 });
     }
 
-    return NextResponse.json(chat.messages); // Usando NextResponse para JSON
+    return NextResponse.json(chat.messages);
   } catch (error) {
-    console.error("Erro ao buscar chat:", error);
     return new Response("Erro ao buscar chat", { status: 500 });
   }
 }
@@ -65,7 +64,6 @@ export async function POST(req, { params }) {
       },
     });
 
-    console.log("✅ Mensagem salva:", message);
     return NextResponse.json(message);
   } catch (err) {
     return new Response("Erro ao salvar mensagem", { status: 500 });
