@@ -32,7 +32,7 @@ model Message {
   id        String     @id @default(cuid())
   chat      Chat       @relation(fields: [chatId], references: [id])
   chatId    String
-  role      String     // 'user' | 'assistant'
+  role      String     
   content   String     @db.Text
   index     Int
   createdAt DateTime   @default(now())

@@ -11,7 +11,6 @@ export default function ChatPage() {
   const [error, setError] = useState(null);
   const [assistantResponse, setAssistantResponse] = useState('');
 
-  // Busca mensagens do chat ao carregar a página
   useEffect(() => {
     async function fetchMessages() {
       try {
@@ -28,7 +27,6 @@ export default function ChatPage() {
     fetchMessages();
   }, [chatId]);
 
-  // Envia mensagem e inicia streaming da resposta
   const handleSend = async () => {
     if (!input.trim() || loading) return;
 
@@ -37,20 +35,17 @@ export default function ChatPage() {
     const userMessage = { role: 'user', content: input };
 
     try {
-      // 1. Salva a mensagem do usuário no banco de dados
       await fetch(`/api/chats/${chatId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userMessage),
       });
 
-      // 2. Atualiza a UI localmente
       const updatedMessages = [...messages, userMessage];
       setMessages(updatedMessages);
       setInput('');
       setAssistantResponse(''); // Reseta o buffer de streaming
 
-      // 3. Chama a API de streaming
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,7 +54,6 @@ export default function ChatPage() {
 
       if (!res.ok) throw new Error('Erro no streaming');
 
-      // 4. Processa o stream em tempo real
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let fullResponse = '';
@@ -73,7 +67,6 @@ export default function ChatPage() {
         setAssistantResponse(fullResponse); // Atualiza a UI a cada chunk
       }
 
-      // 5. Salva a resposta final no banco de dados
       await fetch(`/api/chats/${chatId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -83,7 +76,6 @@ export default function ChatPage() {
         }),
       });
 
-      // 6. Atualiza a lista de mensagens
       setMessages(prev => [...prev, { role: 'assistant', content: fullResponse }]);
       setAssistantResponse('');
 

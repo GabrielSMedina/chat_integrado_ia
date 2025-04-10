@@ -45,7 +45,6 @@ export async function GET() {
   return Response.json(chats);
 }
 
-// Adicione este novo método para lidar com DELETE
 export async function DELETE(req) {
   const session = await getServerSession(authOptions);
   if (!session) return new Response("Unauthorized", { status: 401 });
@@ -58,12 +57,10 @@ export async function DELETE(req) {
       return new Response("ID do chat não fornecido", { status: 400 });
     }
 
-    // Primeiro deleta todas as mensagens associadas ao chat
     await prisma.message.deleteMany({
       where: { chatId: chatId },
     });
 
-    // Depois deleta o chat
     const deletedChat = await prisma.chat.delete({
       where: { id: chatId },
     });

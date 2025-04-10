@@ -1,4 +1,3 @@
-// app/page.tsx
 "use client";
 
 import { useSession, signIn, signOut } from "next-auth/react";
@@ -14,8 +13,8 @@ export default function Home() {
   }
 
   const handleLogout = async () => {
-    await signOut({ redirect: false }); // evita redirecionamento automático
-    router.push("/login"); // envia o usuário para a página de login
+    await signOut({ redirect: false });
+    router.push("/login");
   };
 
   return (

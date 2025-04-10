@@ -6,7 +6,7 @@ export async function POST(req, { params }) {
   const session = await getServerSession(authOptions);
   if (!session) return new Response("Unauthorized", { status: 401 });
 
-  const { message } = await req.json(); // mensagem do usuário
+  const { message } = await req.json();
   const chatId = params.chatId;
 
   // 1. Salvar mensagem do usuário
@@ -35,7 +35,7 @@ export async function POST(req, { params }) {
       Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model: "gpt-4", // ou gpt-3.5-turbo
+      model: "gpt-4omini",
       messages: messages.map((msg) => ({
         role: msg.role,
         content: msg.content,
@@ -44,7 +44,7 @@ export async function POST(req, { params }) {
   });
 
   const data = await response.json();
-  const aiMessage = data.choices?.[0]?.message?.content ?? "Erro ao gerar resposta.";
+  const aiMessage = data.choices?.[0]?.message?.content ?? "Erro ao gerar resposta."; // Pegando o conteudo da mensagem
 
   // 4. Salvar resposta do assistant
   const aiMsgCount = await prisma.message.count({ where: { chatId } });
