@@ -2,14 +2,14 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(req, { params }) {
+export async function POST(req, props) {
+  const params = await props.params;
   const session = await getServerSession(authOptions);
   if (!session) return new Response("Unauthorized", { status: 401 });
 
   const { message } = await req.json();
   const chatId = params.chatId;
 
-  // 1. Salvar mensagem do usuário
   const userMsgCount = await prisma.message.count({ where: { chatId } });
 
   await prisma.message.create({
@@ -21,13 +21,11 @@ export async function POST(req, { params }) {
     },
   });
 
-  // 2. Buscar todo o histórico
   const messages = await prisma.message.findMany({
     where: { chatId },
     orderBy: { index: "asc" },
   });
 
-  // 3. Chamar a OpenAI
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -46,7 +44,6 @@ export async function POST(req, { params }) {
   const data = await response.json();
   const aiMessage = data.choices?.[0]?.message?.content ?? "Erro ao gerar resposta."; // Pegando o conteudo da mensagem
 
-  // 4. Salvar resposta do assistant
   const aiMsgCount = await prisma.message.count({ where: { chatId } });
 
   const assistantMessage = await prisma.message.create({
@@ -58,6 +55,5 @@ export async function POST(req, { params }) {
     },
   });
 
-  // 5. Retornar resposta
   return Response.json(assistantMessage);
 }

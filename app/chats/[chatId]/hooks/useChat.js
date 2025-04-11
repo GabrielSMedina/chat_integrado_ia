@@ -29,14 +29,12 @@ export const useChat = () => {
     const userMessage = { role: 'user', content: state.input };
 
     try {
-      // 1. Save user message
       await fetch(`/api/chats/${chatId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userMessage),
       });
 
-      // 2. Update UI
       const updatedMessages = [...state.messages, userMessage];
       setState(prev => ({
         ...prev,
@@ -45,7 +43,6 @@ export const useChat = () => {
         assistantResponse: ''
       }));
 
-      // 3. Get AI response
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -54,7 +51,6 @@ export const useChat = () => {
 
       if (!res.ok) throw new Error('Streaming error');
 
-      // 4. Process streaming
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let fullResponse = '';
@@ -67,7 +63,6 @@ export const useChat = () => {
         setState(prev => ({ ...prev, assistantResponse: fullResponse }));
       }
 
-      // 5. Save AI response
       await fetch(`/api/chats/${chatId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

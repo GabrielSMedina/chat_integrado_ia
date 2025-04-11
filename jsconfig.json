@@ -4,7 +4,8 @@
     "paths": {
       "@/*": ["./*"],
       "@/components/*": ["components/*"],
-      "@/hooks/*": ["hooks/*"]
+      "@/hooks/*": ["hooks/*"],
+      "@handlers/*": ["src/lib/handlers/*"]
     }
   },
   "exclude": ["node_modules"]
