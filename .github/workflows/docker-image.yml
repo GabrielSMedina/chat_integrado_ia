@@ -1,0 +1,48 @@
+name: Docker Image CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ github.run_id }}
+    permissions:
+      contents: write
+      deployments: write
+
+    steps:
+    - name: checkout code
+      uses: actions/checkout@v4
+
+    - name: Instalar dependências
+      run: npm ci
+    
+    - name: Autenticar no Google Cloud
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+        export_default_credentials: true
+ 
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag chat:$(date +%s)
+
+    - name: Testes unitários
+      run: docker run --rm my-image-name:$(date +%s) npx vitest run
+
+    - name: Deploy no Cloud Run
+      run: |
+        gcloud run deploy chat-integrado-ia \
+          --image=gcr.io/${{ secrets.GCP_PROJECT_ID }}/chat-integrado-ia \
+          --region=southamerica-east1 \
+          --platform=managed \
+          --allow-unauthenticated
+
