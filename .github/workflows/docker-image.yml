@@ -49,7 +49,7 @@ jobs:
         docker build \
           --build-arg OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
           --build-arg NODE_ENV=production \
-          -t ${{ env.DOCKER_IMAGE }} .
+          -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ github.event.repository.name }}:${{ github.sha }} .
 
     - name: Push Docker image
       run: |
