@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/lib/authOptions";
 import { getChatMessages, saveMessage } from "@/lib/handlers/messageHandlers";
 import { NextResponse } from "next/server";
 
