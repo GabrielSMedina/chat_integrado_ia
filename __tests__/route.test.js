@@ -44,6 +44,8 @@ describe("saveMessage", () => {
     vi.clearAllMocks();
   });
 
+  
+
   it("salva e retorna a mensagem", async () => {
     prisma.message.count.mockResolvedValueOnce(0);
     prisma.message.create.mockResolvedValueOnce({
