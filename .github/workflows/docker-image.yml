@@ -34,18 +34,6 @@ jobs:
     - name: Run unit tests
       run: npx vitest run
 
-    - name: Debug Secrets and Image
-      run: |
-        # Imprime os primeiros 50 caracteres do segredo GCP_SA_KEY (se existir e não for vazio)
-        if [[ -n "${{ secrets.GCP_SA_KEY }}" ]]; then
-          echo "GCP_SA_KEY (partial): $(echo "${{ secrets.GCP_SA_KEY }}" | head -c 50)..."
-        else
-          echo "GCP_SA_KEY is empty or not defined."
-        fi
-        echo "GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}"
-        echo "GCP_REPOSITORY: ${{ secrets.GCP_REPOSITORY }}"
-        echo "DOCKER_IMAGE: ${{ env.DOCKER_IMAGE }}"
-
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
