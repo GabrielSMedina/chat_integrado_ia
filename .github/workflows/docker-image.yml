@@ -7,48 +7,67 @@ on:
   pull_request:
     branches: ["main"]
 
+env:
+  DOCKER_IMAGE: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ github.event.repository.name }}:${{ github.sha }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       deployments: write
+      packages: write
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Instalar dependências
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20
+        cache: 'npm'
+
+    - name: Install dependencies
       run: npm ci
 
-    - name: Autenticar no Google Cloud
+    - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
       with:
         credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-    - name: Setup gcloud CLI
+    - name: Set up gcloud CLI
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
 
     - name: Build Docker image
       run: |
-        docker build -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ github.event.repository.name }}:${{ github.sha }} .
+        docker build \
+          --build-arg OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
+          --build-arg NODE_ENV=production \
+          -t ${{ env.DOCKER_IMAGE }} .
 
     - name: Push Docker image
       run: |
-        docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ github.event.repository.name }}:${{ github.sha }}
+        docker push ${{ env.DOCKER_IMAGE }}
 
-    - name: Run unit tests with Vitest
-      run: |
-        npx vitest run
+    - name: Run unit tests
+      run: npx vitest run
 
-    - name: Deploy to Google Cloud Run
+    - name: Deploy to Cloud Run
       run: |
         gcloud run deploy ${{ secrets.GCP_SERVICE_NAME }} \
-          --image us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ github.event.repository.name }}:${{ github.sha }} \
+          --image ${{ env.DOCKER_IMAGE }} \
           --region ${{ secrets.GCP_REGION }} \
           --platform managed \
           --project ${{ secrets.GCP_PROJECT_ID }} \
           --allow-unauthenticated \
-          --set-env-vars=GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }},NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }},NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }},DATABASE_URL=${{ secrets.DATABASE_URL }},OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+          --set-env-vars="
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }},
+            NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }},
+            NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }},
+            DATABASE_URL=${{ secrets.DATABASE_URL }},
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},
+            NODE_ENV=production"
