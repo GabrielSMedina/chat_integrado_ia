@@ -1,4 +1,4 @@
-name: Docker Image CI
+name: Deploy to Cloud Run
 
 on:
   workflow_dispatch:
@@ -8,38 +8,47 @@ on:
     branches: [ "main" ]
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
-    outputs:
-      release_tag: ${{ github.run_id }}
     permissions:
       contents: write
       deployments: write
 
     steps:
-    - name: checkout code
+    - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Instalar dependências
       run: npm ci
-    
+
     - name: Autenticar no Google Cloud
       uses: google-github-actions/auth@v2
       with:
-        credentials_json: ${{ secrets.GSP_SA_KEY }}
- 
-    - name: Build the Docker image
-      run: docker build -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ github.event.repository.name }}:${{ github.sha }} .
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-    - name: Push Docker image to GCR/Artifact Registry
-      run: docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ github.event.repository.name }}:${{ github.sha }}
+    - name: Setup gcloud CLI
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        project_id: ${{ secrets.GCP_PROJECT_ID }}
 
-    - name: Testes unitários
-      run: docker run --rm my-image-name:$(date +%s) npx vitest run
+    - name: Build Docker image
+      run: |
+        docker build -t us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ github.event.repository.name }}:${{ github.sha }} .
+
+    - name: Push Docker image
+      run: |
+        docker push us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ github.event.repository.name }}:${{ github.sha }}
+
+    - name: Run unit tests with Vitest
+      run: |
+        npx vitest run
 
     - name: Deploy to Google Cloud Run
       run: |
-        gcloud run deploy ${{ secrets.GCP_SERVICE_NAME }} \--image us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ github.event.repository.name }}:${{ github.sha }} \--region ${{ secrets.GCP_REGION }} \--platform managed \--project ${{ secrets.GCP_PROJECT_ID }} \# Adicione outras configurações do Cloud Run conforme necessário# --set-env-vars=NODE_ENV=production,API_KEY=${{ secrets.API_KEY }}# --update-secrets MY_SECRET=${{ secrets.MY_SECRET }}
-
+        gcloud run deploy ${{ secrets.GCP_SERVICE_NAME }} \
+          --image us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ github.event.repository.name }}:${{ github.sha }} \
+          --region ${{ secrets.GCP_REGION }} \
+          --platform managed \
+          --project ${{ secrets.GCP_PROJECT_ID }} \
+          --allow-unauthenticated \
+          --set-env-vars=GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }},NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }},NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }},DATABASE_URL=${{ secrets.DATABASE_URL }},OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
