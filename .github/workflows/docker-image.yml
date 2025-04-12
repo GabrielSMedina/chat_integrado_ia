@@ -52,18 +52,6 @@ jobs:
       run: |
         gcloud builds submit --tag ${{ env.DOCKER_IMAGE }}
 
-    - name: Create .env.prod file
-      run: |
-        cat <<EOF > .env.prod
-        GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
-        GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
-        NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
-        NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
-        DATABASE_URL=${{ secrets.DATABASE_URL }}
-        OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-        NODE_ENV=production
-        EOF
-
     - name: Deploy to Cloud Run
       if: github.event_name != 'pull_request'
       run: |
@@ -73,4 +61,4 @@ jobs:
           --platform managed \
           --project ${{ secrets.GCP_PROJECT_ID }} \
           --allow-unauthenticated \
-          --env-vars-file .env.prod
+          --set-env-vars "GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }},NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }},NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }},DATABASE_URL=${{ secrets.DATABASE_URL }},OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},NODE_ENV=production"
