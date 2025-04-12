@@ -42,7 +42,7 @@ export async function POST(req, props) {
   });
 
   const data = await response.json();
-  const aiMessage = data.choices?.[0]?.message?.content ?? "Erro ao gerar resposta."; // Pegando o conteudo da mensagem
+  const aiMessage = data.choices?.[0]?.message?.content ?? "Erro ao gerar resposta.";
 
   const aiMsgCount = await prisma.message.count({ where: { chatId } });
 

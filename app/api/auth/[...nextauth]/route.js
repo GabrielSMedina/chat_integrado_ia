@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
-import { authOptions } from "@/lib/authOptions"; // Corrija o caminho de importação
+import { authOptions } from "@/lib/authOptions";
 
-export const dynamic = "force-dynamic"; // Recomendado para rotas de auth
+export const dynamic = "force-dynamic";
 
 const handler = NextAuth(authOptions);
 

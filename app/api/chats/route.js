@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/authOptions";
 import { createChat, getChats, deleteChat } from "@/lib/handlers/chatHandlers";
 
 export async function POST(req) {
-  const session = await getServerSession(authOptions);  // Corrigido para chamar getServerSession com authOptions diretamente
+  const session = await getServerSession(authOptions);
   if (!session) return new Response("Unauthorized", { status: 401 });
 
   const { title } = await req.json();
@@ -17,7 +17,7 @@ export async function POST(req) {
 }
 
 export async function GET(req) {
-  const session = await getServerSession(authOptions);  // Corrigido para chamar getServerSession com authOptions diretamente
+  const session = await getServerSession(authOptions);
   if (!session) return new Response("Unauthorized", { status: 401 });
 
   try {
@@ -29,7 +29,7 @@ export async function GET(req) {
 }
 
 export async function DELETE(req) {
-  const session = await getServerSession(authOptions);  // Corrigido para chamar getServerSession com authOptions diretamente
+  const session = await getServerSession(authOptions);
   if (!session) return new Response("Unauthorized", { status: 401 });
 
   const { searchParams } = new URL(req.url);
