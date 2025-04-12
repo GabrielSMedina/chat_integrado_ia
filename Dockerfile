@@ -1,16 +1,25 @@
 # Etapa de build
 FROM node:20-alpine AS builder
 
-# Adicione ARG para as variáveis necessárias durante o build
-ARG OPENAI_API_KEY
+# Adicione ARG para as variáveis necessárias
 ARG NODE_ENV=production
 
 WORKDIR /app
+
+# Primeiro copie apenas os arquivos necessários para instalação
+COPY package.json package-lock.json* ./
+RUN npm install --include=dev
+
+# Depois copie o restante dos arquivos
 COPY . .
-# Configure as variáveis de ambiente para o build
-ENV OPENAI_API_KEY=$OPENAI_API_KEY
+
+# Configure as variáveis de ambiente
 ENV NODE_ENV=$NODE_ENV
-RUN npm install
+
+# Instale explicitamente o TailwindCSS e dependências
+RUN npm install @tailwindcss/postcss postcss autoprefixer
+
+# Execute o build
 RUN npm run build
 
 # Etapa final
