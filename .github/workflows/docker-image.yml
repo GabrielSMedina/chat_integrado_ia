@@ -8,7 +8,7 @@ on:
     branches: ["main"]
 
 env:
-  DOCKER_IMAGE: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ github.event.repository.name }}:${{ github.sha }}
+  DOCKER_IMAGE: us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ github.event.repository.name }}:${{ github.sha }}
 
 jobs:
   build-and-deploy:
@@ -43,6 +43,10 @@ jobs:
       uses: google-github-actions/setup-gcloud@v1
       with:
         project_id: ${{ secrets.GCP_PROJECT_ID }}
+
+    - name: Configure Docker for Artifact Registry
+      run: |
+        gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
 
     - name: Build and Push Docker image via Google Cloud Build
       run: |
