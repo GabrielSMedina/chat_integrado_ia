@@ -11,7 +11,7 @@ env:
   DOCKER_IMAGE: us-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_REPOSITORY }}/${{ github.event.repository.name }}:${{ github.sha }}
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -30,6 +30,9 @@ jobs:
 
     - name: Install dependencies
       run: npm ci
+
+    - name: Run unit tests
+      run: npx vitest run
 
     - name: Authenticate to Google Cloud
       uses: google-github-actions/auth@v2
@@ -52,10 +55,20 @@ jobs:
       run: |
         docker push ${{ env.DOCKER_IMAGE }}
 
-    - name: Run unit tests
-      run: npx vitest run
+    - name: Create .env.prod file
+      run: |
+        cat <<EOF > .env.prod
+        GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+        GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+        NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+        NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
+        DATABASE_URL=${{ secrets.DATABASE_URL }}
+        OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+        NODE_ENV=production
+        EOF
 
     - name: Deploy to Cloud Run
+      if: github.event_name != 'pull_request'
       run: |
         gcloud run deploy ${{ secrets.GCP_SERVICE_NAME }} \
           --image ${{ env.DOCKER_IMAGE }} \
@@ -63,11 +76,4 @@ jobs:
           --platform managed \
           --project ${{ secrets.GCP_PROJECT_ID }} \
           --allow-unauthenticated \
-          --set-env-vars="
-            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }},
-            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }},
-            NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }},
-            NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }},
-            DATABASE_URL=${{ secrets.DATABASE_URL }},
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }},
-            NODE_ENV=production"
+          --env-vars-file .env.prod
