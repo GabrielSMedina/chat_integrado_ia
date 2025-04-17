@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+from pathlib import Path
 
-## Getting Started
+readme_content = """
+# 💬 Chat Integrado com IA
 
-First, run the development server:
+Este projeto é uma aplicação **fullstack com Next.js e React** que implementa um chat integrado à API da OpenAI. Inclui autenticação via Google, persistência de conversas, exclusão de chats e histórico acessível, além de possuir a exibião do texto em stream, fazendo assim que o texto seja entregue em tempo real de produção. Além disso, cobre **todas as etapas do desenvolvimento ao deploy automatizado**, incluindo integração contínua com GitHub Actions, deploy no Google Cloud Run e banco de dados no Cloud SQL.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🚀 Funcionalidades
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+- Login com Google (via NextAuth)
+- Integração com a API da OpenAI para respostas inteligentes
+- Persistência de conversas organizadas por `chatID`
+- Exclusão completa de chats
+- Histórico de chats acessível
+- estes unitários executados automaticamente via GitHub Actions
+- Deploy contínuo (CI/CD) para Google Cloud Run
+- Stream de mensagens
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 🛠️ Tecnologias Utilizadas
 
-To learn more about Next.js, take a look at the following resources:
+- **Frontend:** [React.js](https://reactjs.org/)
+- **Framework Fullstack:** [Next.js (App Router)](https://nextjs.org/)
+- **Autenticação:** [NextAuth.js](https://next-auth.js.org/) com Google Provider
+- **Backend:** API Routes do Next.js + integração com [OpenAI](https://platform.openai.com/)
+- **Banco de Dados:** [Prisma ORM](https://www.prisma.io/) com MySQL no Google Cloud SQL
+- **Deploy:** [Docker](https://www.docker.com/), [Google Cloud Run](https://cloud.google.com/run)
+- **CI/CD:** [GitHub Actions](https://github.com/features/actions)
+- **Testes:** [Vitest](https://vitest.dev/)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploy Automatizado (CI/CD)
+Este projeto utiliza CI/CD com GitHub Actions:
+- CI: Executa testes a cada push
+- CD: Faz deploy para o Cloud Run ao push na branch main
+- Banco de dados: Utiliza instância MySQL no Google Cloud SQL
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Você pode configurar sua própria infraestrutura no Google Cloud, e usar secrets no GitHub para armazenar as credenciais necessárias (Google Service Account, URLs, chaves de API, etc).
